@@ -43,6 +43,13 @@ var AuthController = {
       }]
     }
 
+    if( data.password.length < 7) {
+      invalidAttributes.password = [{
+        rule: 'password',
+        message: 'The password must be at least 7 characters long'
+      }]
+    }
+
     if(!data.password_confirmation) {
       invalidAttributes.password_confirmation = [{
         rule: 'required',
@@ -93,8 +100,7 @@ var AuthController = {
           }).exec(function (err, passport) {
           if (err) return res.negotiate(err)
 
-
-          return res.redirect('')
+          return res.redirect(process.env.BASE_URL || '')
         })
       })
 

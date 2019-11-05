@@ -23,6 +23,7 @@
                           HeaderNavigationItems,
                           UserService, AuthService, NotificationsService, $localStorage) {
         $scope.user = UserService.user;
+        $scope.no_auth = window.no_auth;
         $scope.auth = AuthService;
         $scope.navigationItems = HeaderNavigationItems;
         $scope.notifications = NotificationsService.load();
@@ -119,14 +120,18 @@
 
         console.log("FooterController:user =>", $scope.user)
 
-        function _fetchConnections() {
-          NodeModel.load({
-            sort: 'createdAt DESC'
-          }).then(function (connections) {
-            $scope.connections = connections;
-          });
-        }
 
+        function _fetchConnections() {
+          $http.get('api/kongnode').then(function (response) {
+            $scope.connections = response.data;
+          });
+          // NodeModel.load({
+          //   sort: 'createdAt DESC'
+          // }).then(function (connections) {
+          //   console.log("!!!!!!!!!!!!!!!!!!!!!!!!!", connections);
+          //   $scope.connections = connections;
+          // });
+        }
 
         $scope.activateConnection = function (node) {
 
@@ -161,6 +166,7 @@
                 }, function (err) {
                   $scope.busy = false
                   UserModel.handleError($scope, err)
+                  MessageService.error(_.get(err, 'data.message', 'Something went wrong...'))
                 }
               );
 
@@ -216,14 +222,7 @@
 
         $scope.auth = AuthService;
         $scope.user = UserService.user();
-        $scope.showCluster = false;
 
-        $rootScope.$watch('Gateway', function (newValue, oldValue) {
-
-          if (newValue && newValue.version) {
-            $scope.showCluster = Semver.cmp(newValue.version, "0.11.0") < 0;
-          }
-        });
 
         $scope.items = [
           {
@@ -250,15 +249,6 @@
             title: 'Info',
             icon: 'mdi-information-outline',
             access: AccessLevels.admin
-          },
-          {
-            state: 'cluster',
-            show: function () {
-              return AuthService.isAuthenticated() && $rootScope.Gateway && $scope.showCluster;
-            },
-            title: 'Cluster',
-            icon: 'mdi-server-network',
-            access: AccessLevels.user
           },
           {
             state: 'services',
@@ -334,6 +324,7 @@
             state: 'users',
             icon: 'mdi-account-multiple-outline',
             show: function () {
+              if(window.no_auth) return false;
               return AuthService.isAuthenticated() && AuthService.hasPermission('users', 'read');
             },
             title: 'Users',
